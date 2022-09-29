@@ -11,5 +11,5 @@ public:
   MetaBallWatchy(const watchySettings& s);
   void drawWatchFace();
 
-  double getBatteryFill();
+  float getBatteryFill();
 };
