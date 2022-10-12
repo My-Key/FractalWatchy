@@ -132,52 +132,75 @@ static Vec2f ClosestPointOnArc(const Vec2f& center, const Vec2f& start, const Ve
 static void MetaBall(const Vec2f& currentPos, const Vec2f& circleCenter, const float& radius, const float& extraRadius, int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& prevCenter)
 {
   Vec2f offset = currentPos - circleCenter;
-  float totalRadus = radius + extraRadius;
+  float totalRadius = radius + extraRadius;
   float lengthSqr = offset.lengthSquared();
 
-  if (lengthSqr >= totalRadus * totalRadus)
+  if (lengthSqr >= totalRadius * totalRadius)
     return;
 
   float distance = sqrtf(lengthSqr);
-  float newDistance = totalRadus - distance;
+  float newDistance = totalRadius - distance;
 
   if (newDistance >= extraRadius)
   {
-    newDistance = smoothstep(unlerp(newDistance, extraRadius, totalRadus) * 0.5f + 0.5f) * 2.0f;
+    //newDistance = smoothstep(unlerp(newDistance, extraRadius, totalRadius) * 0.5f + 0.5f) * 2.0f * totalRadius;
+    //distance = clamp(distance, 0, radius);
+    newDistance = sqrt(radius * radius - lengthSqr) + extraRadius;
   }
   else
   {
-    newDistance = smoothstep(unlerp(newDistance, 0, extraRadius) * 0.5f) * 2.0f;
+    newDistance = smoothstep(unlerp(newDistance, 0, extraRadius) * 0.5f) * 2.0f * extraRadius;
   }
 
   // if (distance > 0.0f)
   //   newDistance = (radius) / distance;
 
   count++;
-  totalDistance += newDistance;
-  Vec2f normal = offset / radius;
 
   if (count == 1)
   {
     prevRadius = radius;
     prevCenter = circleCenter;
-    totalNormal = normal;
+    totalNormal = offset / radius;
+    totalDistance = newDistance;
     return;
   }
+  
+  Vec2f normal = offset / radius;
+  totalDistance += newDistance;
 
   // ToDo: fix
   //float weight = newDistance / (totalDistance);
   //float otherWeight = 1.0f - weight;
 
+  Vec2f offsetBetweenCenters = circleCenter - prevCenter;
+  Vec2f offsetBetweenCentersNormalized = offsetBetweenCenters.getNormalized();
+
   //Vec2f center = circleCenter * weight + prevCenter * otherWeight;
   float weight = 0.0f;
-  Vec2f center = ClosestPointOnSegment(circleCenter, prevCenter, currentPos, weight);
+  Vec2f center = ClosestPointOnSegment(circleCenter - offsetBetweenCentersNormalized * totalRadius, prevCenter + offsetBetweenCentersNormalized * (prevRadius + extraRadius), currentPos, weight);
+  
+  //Vec2f center = ClosestPointOnSegment(circleCenter, prevCenter, currentPos, weight);
   float otherWeight = 1.0f - weight;
-  Vec2f newOffset = currentPos - center;
-  //radius = newOffset.length();
-  //float newRadius = radius * weight + prevRadius * otherWeight;
+  //Vec2f newCenter = center;
+  Vec2f newCenter = circleCenter * weight + prevCenter * otherWeight;
+  prevCenter = newCenter;
+  
+    prevRadius = radius;
+  return;
 
-  float newRadius = ((offset.getNormalized() * radius + (currentPos - prevCenter).getNormalized() * prevRadius) * 0.5f).length();
+  Vec2f newOffset = currentPos - newCenter;
+  //radius = newOffset.length();
+  float newRadius = radius * (weight * weight) + prevRadius * (otherWeight * otherWeight) + extraRadius * (weight * weight * otherWeight * otherWeight);
+
+
+
+  //Vec2f offsetToClosestPoint = (offset.getNormalized() * radius + totalNormal.getNormalized() * prevRadius) * 0.5f;
+
+  //float newRadius = offsetToClosestPoint.length();
+  
+  if (newRadius <= 0.0f)
+    newRadius = 1.0f;
   
   Vec2f newNormal = newOffset / newRadius;
   totalNormal = newNormal;
@@ -193,7 +216,7 @@ static void MetaBall(const Vec2f& currentPos, const Vec2f& circleCenter, const f
 
   totalNormal *= newLength; */
 
-  prevCenter = center;
+  prevCenter = newCenter;
 }
 
 static void Arc(Vec2f currentPos, Vec2f center, float radius, float extraRadius, float arcRadius, float arcStartAngle, float arcAngle, int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& prevCenter)
@@ -274,7 +297,7 @@ int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& 
 const float DRAW_2_ARC_START_ANGLE = 180.0f;
 const Vec2f DRAW_2_ARC_START = Vec2f(cos(DRAW_2_ARC_START_ANGLE * DEG_TO_RAD), sin(DRAW_2_ARC_START_ANGLE * DEG_TO_RAD));
 
-const float DRAW_2_ARC_END_ANGLE = 200.0f;
+const float DRAW_2_ARC_END_ANGLE = 198.0f;
 const float DRAW_2_ARC_END_ANGLE_SUM = DRAW_2_ARC_START_ANGLE + DRAW_2_ARC_END_ANGLE;
 const Vec2f DRAW_2_ARC_END = Vec2f(cos(DRAW_2_ARC_END_ANGLE_SUM * DEG_TO_RAD), sin(DRAW_2_ARC_END_ANGLE_SUM * DEG_TO_RAD));
 
@@ -299,17 +322,17 @@ int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& 
 }
 
 
-const float DRAW_3_ARC_START_ANGLE = 180.0f;
+const float DRAW_3_ARC_START_ANGLE = 240.0f;
 const Vec2f DRAW_3_ARC_START = Vec2f(cos(DRAW_3_ARC_START_ANGLE * DEG_TO_RAD), sin(DRAW_3_ARC_START_ANGLE * DEG_TO_RAD));
 
-const float DRAW_3_ARC_END_ANGLE = 270.0f;
+const float DRAW_3_ARC_END_ANGLE = 200.0f;
 const float DRAW_3_ARC_END_ANGLE_SUM = DRAW_3_ARC_START_ANGLE + DRAW_3_ARC_END_ANGLE;
 const Vec2f DRAW_3_ARC_END = Vec2f(cos(DRAW_3_ARC_END_ANGLE_SUM * DEG_TO_RAD), sin(DRAW_3_ARC_END_ANGLE_SUM * DEG_TO_RAD));
 
 const float DRAW_3_2_ARC_START_ANGLE = 280.0f;
 const Vec2f DRAW_3_2_ARC_START = Vec2f(cos(DRAW_3_2_ARC_START_ANGLE * DEG_TO_RAD), sin(DRAW_3_2_ARC_START_ANGLE * DEG_TO_RAD));
 
-const float DRAW_3_2_ARC_END_ANGLE = 195.0f;
+const float DRAW_3_2_ARC_END_ANGLE = 200.0f;
 const float DRAW_3_2_ARC_END_ANGLE_SUM = DRAW_3_2_ARC_START_ANGLE + DRAW_3_2_ARC_END_ANGLE;
 const Vec2f DRAW_3_2_ARC_END = Vec2f(cos(DRAW_3_2_ARC_END_ANGLE_SUM * DEG_TO_RAD), sin(DRAW_3_2_ARC_END_ANGLE_SUM * DEG_TO_RAD));
 
@@ -321,7 +344,7 @@ int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& 
   float offset = (1.0f - radiusPercentage);
   float radius = size * radiusPercentage;
   
-  Arc(currentPos, center + Vec2f(0.0f, -size * 0.5f), DRAW_3_ARC_START, DRAW_3_ARC_END, radius, extraRadius, size * halfOffset, DRAW_3_ARC_START_ANGLE, DRAW_3_ARC_END_ANGLE, count, totalDistance, totalNormal, prevRadius, prevCenter);
+  Arc(currentPos, center + Vec2f(-size * 0.1f, -size * 0.4f), DRAW_3_ARC_START, DRAW_3_ARC_END, radius, extraRadius, size * (halfOffset + 0.1f), DRAW_3_ARC_START_ANGLE, DRAW_3_ARC_END_ANGLE, count, totalDistance, totalNormal, prevRadius, prevCenter);
   
   Arc(currentPos, center + Vec2f(-size * 0.1f, size * 0.4f), DRAW_3_2_ARC_START, DRAW_3_2_ARC_END, radius, extraRadius, size * (halfOffset + 0.1f), DRAW_3_2_ARC_START_ANGLE, DRAW_3_2_ARC_END_ANGLE, count, totalDistance, totalNormal, prevRadius, prevCenter);
 }
@@ -336,7 +359,7 @@ int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& 
   Vec2f s1 = center + Vec2f(0.0f, -size * offset);
   Vec2f s2 = center + Vec2f(-size * halfOffset, size * 0.2f);
   Vec2f s3 = center + Vec2f(size * halfOffset, size * 0.2f);
-  Vec2f s4 = center + Vec2f(size * 0.3f, -size * 0.1f);
+  Vec2f s4 = center + Vec2f(size * 0.3f, 0.0f);
   Vec2f s5 = center + Vec2f(size * 0.1f, size * offset);
 
   Vec2f closestPoint = ClosestPointOnSegment(s1, s2, currentPos);
@@ -384,7 +407,7 @@ int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& 
   float offset = (1.0f - radiusPercentage);
   float radius = size * radiusPercentage;
   Vec2f s1 = center + Vec2f(size * halfOffset, -size * offset);
-  Vec2f s2 = center + Vec2f(-size * halfOffset, size * 0.35f);
+  Vec2f s2 = center + Vec2f(-size * halfOffset * 0.5f, size * 0.35f * 0.5f);
   Vec2f s3 = center + Vec2f(0.0f, size * 0.5f);
 
   Vec2f closestPoint = ClosestPointOnSegment(s1, s2, currentPos);
@@ -432,7 +455,7 @@ int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& 
   float offset = (1.0f - radiusPercentage);
   float radius = size * radiusPercentage;
   Vec2f s1 = center + Vec2f(-size * halfOffset, size * offset);
-  Vec2f s2 = center + Vec2f(size * halfOffset, -size * 0.35f);
+  Vec2f s2 = center + Vec2f(size * halfOffset * 0.5f, -size * 0.35f * 0.5f);
   Vec2f s3 = center + Vec2f(0.0f, -size * 0.5f);
 
   Vec2f closestPoint = ClosestPointOnSegment(s1, s2, currentPos);
@@ -491,6 +514,9 @@ int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& 
   }
 }
 
+const float NUMBER_SEPARATION = 4.0f;
+const float NUMBER_SEPARATION_HALF = NUMBER_SEPARATION * 0.5f;
+
 static void DrawNumber(const Vec2f& currentPos, const Vec2f& center, const int& number, const float& size, const float& extraRadius,
 int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& prevCenter)
 {
@@ -498,16 +524,28 @@ int& count, float& totalDistance, Vec2f& totalNormal, float& prevRadius, Vec2f& 
   int secondDigit = number % 10;
 
   if (currentPos.x <= center.x + extraRadius)
-    DrawDigit(currentPos, center + Vec2f(-size * 0.5f, 0.0f), firstDigit, size, extraRadius, count, totalDistance, totalNormal, prevRadius, prevCenter);
+    DrawDigit(currentPos, center + Vec2f(-size * 0.5f - NUMBER_SEPARATION_HALF, 0.0f), firstDigit, size, extraRadius, count, totalDistance, totalNormal, prevRadius, prevCenter);
 
   if (currentPos.x >= center.x - extraRadius)
-    DrawDigit(currentPos, center + Vec2f(size * 0.5f, 0.0f), secondDigit, size, extraRadius, count, totalDistance, totalNormal, prevRadius, prevCenter);
+    DrawDigit(currentPos, center + Vec2f(size * 0.5f + NUMBER_SEPARATION_HALF, 0.0f), secondDigit, size, extraRadius, count, totalDistance, totalNormal, prevRadius, prevCenter);
 }
 
-const float EXTRA_RADIUS = 8.0f;
-const float NUMBER_SIZE = 44.0f;
-const float TOP_LINE = 45.0f;
-const float BOTTOM_LINE = 155.0f;
+const float EXTRA_RADIUS = 9.0f;
+const float NUMBER_SIZE = 42.0f;
+
+const float COLON_RADIUS = 6.0f;
+const float COLON_OFFSET = 9.0f;
+
+const float SLASH_RADIUS = 6.0f;
+
+const float BATTERY_Y_POS = 99.0f;
+const float BATTERY_RADIUS = 5.0f;
+
+const float TOP_LINE = BATTERY_Y_POS - BATTERY_RADIUS - NUMBER_SIZE - EXTRA_RADIUS + 3.0f;
+const float BOTTOM_LINE = BATTERY_Y_POS + BATTERY_RADIUS + NUMBER_SIZE + EXTRA_RADIUS - 3.0f;
+
+const float LEFT_LINE = 99.0f - COLON_RADIUS - NUMBER_SIZE - NUMBER_SEPARATION_HALF - 5.0f;
+const float RIGHT_LINE = 99.0f + COLON_RADIUS + NUMBER_SIZE + NUMBER_SEPARATION_HALF + 5.0f;
 
 void MetaBallWatchy::drawWatchFace()
 {
@@ -539,69 +577,76 @@ void MetaBallWatchy::drawWatchFace()
 
       if (y <= TOP_LINE + NUMBER_SIZE + EXTRA_RADIUS)
       {
-        if (x < NUMBER_SIZE * 2 + EXTRA_RADIUS)
+        if (x < LEFT_LINE + NUMBER_SIZE + NUMBER_SEPARATION_HALF + EXTRA_RADIUS)
         {
-          DrawNumber(currentPos, Vec2f(NUMBER_SIZE, TOP_LINE), hour, NUMBER_SIZE, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
+          DrawNumber(currentPos, Vec2f(LEFT_LINE, TOP_LINE), hour, NUMBER_SIZE, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
         }
 
-        if (x > 200 - NUMBER_SIZE * 2 - EXTRA_RADIUS)
+        if (x > RIGHT_LINE - NUMBER_SIZE - NUMBER_SEPARATION_HALF - EXTRA_RADIUS)
         {
-          DrawNumber(currentPos, Vec2f(200.0f - NUMBER_SIZE, TOP_LINE), minute, NUMBER_SIZE, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
+          DrawNumber(currentPos, Vec2f(RIGHT_LINE, TOP_LINE), minute, NUMBER_SIZE, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
         }
-
-        const float radius = 6.0f;
         
-        if (x >= 100 - radius - EXTRA_RADIUS && x <= 100 + radius + EXTRA_RADIUS)
+        if (x >= 100 - COLON_RADIUS - EXTRA_RADIUS && x <= 100 + COLON_RADIUS + EXTRA_RADIUS)
         {
-          MetaBall(currentPos, Vec2f(100.0f, TOP_LINE - 9.0f), radius, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
-          MetaBall(currentPos, Vec2f(100.0f, TOP_LINE + 9.0f), radius, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
+          MetaBall(currentPos, Vec2f(100.0f, TOP_LINE - COLON_OFFSET), COLON_RADIUS, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
+          MetaBall(currentPos, Vec2f(100.0f, TOP_LINE + COLON_OFFSET), COLON_RADIUS, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
         }
       }
 
       if (y >= BOTTOM_LINE - NUMBER_SIZE - EXTRA_RADIUS)
       {
-        if (x < NUMBER_SIZE * 2 + EXTRA_RADIUS)
+        if (x < LEFT_LINE + NUMBER_SIZE + NUMBER_SEPARATION_HALF + EXTRA_RADIUS)
         {
-          DrawNumber(currentPos, Vec2f(NUMBER_SIZE, BOTTOM_LINE), month, NUMBER_SIZE, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
+          DrawNumber(currentPos, Vec2f(LEFT_LINE, BOTTOM_LINE), month, NUMBER_SIZE, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
         }
 
-        if (x > 200 - NUMBER_SIZE * 2 - EXTRA_RADIUS)
+        if (x > RIGHT_LINE - NUMBER_SIZE - NUMBER_SEPARATION_HALF - EXTRA_RADIUS)
         {
-          DrawNumber(currentPos, Vec2f(200.0f - NUMBER_SIZE, BOTTOM_LINE), day, NUMBER_SIZE, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
+          DrawNumber(currentPos, Vec2f(RIGHT_LINE, BOTTOM_LINE), day, NUMBER_SIZE, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
         }
 
-        const float radius = 6.0f;
-
-        if (x > 95.0f - radius - EXTRA_RADIUS && x < 105.0f + radius + EXTRA_RADIUS)
+        if (x > 95.0f - SLASH_RADIUS - EXTRA_RADIUS && x < 105.0f + SLASH_RADIUS + EXTRA_RADIUS)
         {
-          Vec2f s1 (105.0f, BOTTOM_LINE - 40.0f);
-          Vec2f s2 (95.0f, BOTTOM_LINE + 40.0f);
+          Vec2f s1 (105.0f, BOTTOM_LINE - NUMBER_SIZE + SLASH_RADIUS);
+          Vec2f s2 (95.0f, BOTTOM_LINE + NUMBER_SIZE - SLASH_RADIUS);
 
           Vec2f closestPoint = ClosestPointOnSegment(s1, s2, currentPos);
-          MetaBall(currentPos, closestPoint, radius, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
+          MetaBall(currentPos, closestPoint, SLASH_RADIUS, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
         }
       }
 
-      const float radius = 5.0f;
-
-      if (y >= 100 - radius - EXTRA_RADIUS && y <= 100 + radius + EXTRA_RADIUS)
+      if (y >= BATTERY_Y_POS - BATTERY_RADIUS - EXTRA_RADIUS && y <= BATTERY_Y_POS + BATTERY_RADIUS + EXTRA_RADIUS)
       {
-        Vec2f s3 (100.0f - 90.0f * battery, 100.0f);
-        Vec2f s4 (100.0f + 90.0f * battery, 100.0f);
+        Vec2f s3 (100.0f - (100.0f - BATTERY_RADIUS - 1.0f) * battery, BATTERY_Y_POS);
+        Vec2f s4 (100.0f + (100.0f - BATTERY_RADIUS - 1.0f) * battery, BATTERY_Y_POS);
 
         Vec2f closestPoint = ClosestPointOnSegment(s3, s4, currentPos);
-        MetaBall(currentPos, closestPoint, radius, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
+        MetaBall(currentPos, closestPoint, BATTERY_RADIUS, EXTRA_RADIUS, count, totalDistance, totalNormal, prevRadius, center);
       }
 
       if (count > 0)
       { 
-        if (totalDistance > 1.0f)
+        if (totalDistance > EXTRA_RADIUS)
         { 
-          totalNormal *= 100.0f;
-          totalNormal += Vec2f(100.0f, 100.0f);
-          display.drawPixel(x, y, getColor3(x, y, totalNormal.x, totalNormal.y, MatCapSource, 200,200));
+          //display.drawPixel(x,y, totalDistance - EXTRA_RADIUS > 4.0f);
+          //display.drawPixel(x,y, fmod(totalDistance - EXTRA_RADIUS, 8.0f) > 4.0f);
+          //display.drawPixel(x,y,GxEPD_WHITE);
+          //display.drawPixel(x,y, totalNormal.lengthSquared() <= 1.0f);
+          //if (totalNormal.lengthSquared() > 1.0f)
+            //totalNormal.normalize();
+
+
+          Vec3f pointOnSurface (x,y, totalDistance - EXTRA_RADIUS);
+          Vec3f centerV3 (center.x, center.y, 0.0f);
+
+          Vec3f normal = (pointOnSurface - centerV3).getNormalized();
+
+          normal *= 100.0f;
+          normal += Vec3f(100.0f, 100.0f, 0.0f);
+          display.drawPixel(x, y, getColor3(x, y, normal.x, normal.y, MatCapSource, 200,200));
         }
-        else if (totalDistance >= 1.0f - 1.0f / EXTRA_RADIUS)
+        else if (totalDistance >= EXTRA_RADIUS - 1.0f)
           display.drawPixel(x,y,GxEPD_BLACK);
       }
     }
