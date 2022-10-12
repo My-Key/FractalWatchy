@@ -145,8 +145,8 @@ static void MetaBall(const Vec2f& currentPos, const Vec2f& circleCenter, const f
   prevCenter = newCenter;
   
   totalDistance += newDistance;
-  Vec3f pointOnSurface (currentPos.x, currentPos.y, totalDistance - extraRadius);
-  Vec3f centerV3 (newCenter.x, newCenter.y);
+  Vec3f pointOnSurface (currentPos.x, currentPos.y, totalDistance);
+  Vec3f centerV3 (newCenter.x, newCenter.y, 0.0f);
   
   prevRadius = (pointOnSurface - centerV3).length();
 }
