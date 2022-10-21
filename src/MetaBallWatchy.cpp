@@ -112,10 +112,15 @@ static void MetaBall(const Vec2f& currentPos, const Vec2f& circleCenter, const f
 
   float radiusSqr = radius * radius;
   float newDistance = 0.0f;
+  
+  count++;
 
   if (lengthSqr < radiusSqr)
   {
-    newDistance = sqrt(radiusSqr - lengthSqr) + extraRadius;
+    if (count > 1)
+      newDistance = sqrt(radiusSqr - lengthSqr) + extraRadius;
+    else
+      newDistance = 1.0f + extraRadius;
   }
   else
   {
@@ -124,14 +129,25 @@ static void MetaBall(const Vec2f& currentPos, const Vec2f& circleCenter, const f
     newDistance = smoothstep(unlerp(newDistance, 0, extraRadius) * 0.5f) * 2.0f * extraRadius;
   }
 
-  count++;
-
   if (count == 1)
   {
     prevRadius = radius;
     prevCenter = circleCenter;
     totalDistance = newDistance;
     return;
+  }
+
+  if (count == 2)
+  {
+    Vec2f offsetPrev = currentPos - prevCenter;
+    float lengthPrevSqr = offsetPrev.lengthSquared();
+  
+    float radiusPrevSqr = prevRadius * prevRadius;
+
+    if (lengthPrevSqr < radiusPrevSqr)
+    {
+      totalDistance = sqrt(radiusPrevSqr - lengthPrevSqr) + extraRadius;
+    }
   }
 
   Vec2f offsetBetweenCenters = circleCenter - prevCenter;
@@ -146,7 +162,7 @@ static void MetaBall(const Vec2f& currentPos, const Vec2f& circleCenter, const f
   
   totalDistance += newDistance;
   Vec3f pointOnSurface (currentPos.x, currentPos.y, totalDistance);
-  Vec3f centerV3 (newCenter.x, newCenter.y, 0.0f);
+  Vec3f centerV3 (newCenter.x, newCenter.y, extraRadius);
   
   prevRadius = (pointOnSurface - centerV3).length();
 }
@@ -546,13 +562,9 @@ void MetaBallWatchy::drawWatchFace()
       { 
         if (totalDistance > EXTRA_RADIUS)
         {
-          Vec3f pointOnSurface (x,y, totalDistance - EXTRA_RADIUS);
-          Vec3f centerV3 (center.x, center.y, 0.0f);
-
-          Vec3f normal = (pointOnSurface - centerV3).getNormalized();
-
-          normal *= 100.0f;
-          normal += Vec3f(100.0f, 100.0f, 0.0f);
+          Vec2f normal = (currentPos - center);
+          normal *= 100.0f / prevRadius;
+          normal += Vec2f(100.0f, 100.0f);
           display.drawPixel(x, y, getColor3(x, y, normal.x, normal.y, MatCapSource, 200,200));
         }
         else if (totalDistance >= EXTRA_RADIUS - 1.0f)
