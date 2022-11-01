@@ -88,7 +88,7 @@ static Vec2f ClosestPointOnArc(const Vec2f& center, const Vec2f& start, const Ve
   float startPrependicularDot = startPerpendicular.dot(diff);
   float endPrependicularDot = endPerpendicular.dot(diff);
 
-  bool isPointOnArc = over180 && (startPrependicularDot >= 0.0f && endPrependicularDot >= 0.0f) || !over180 && !(startPrependicularDot < 0.0f && endPrependicularDot < 0.0f);
+  bool isPointOnArc = !over180 && (startPrependicularDot >= 0.0f && endPrependicularDot >= 0.0f) || over180 && !(startPrependicularDot < 0.0f && endPrependicularDot < 0.0f);
 
   if (isPointOnArc)
     return center + diff.getNormalized() * radius;
