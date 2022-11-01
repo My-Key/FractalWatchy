@@ -77,14 +77,18 @@ static Vec2f ClosestPointOnSegment(const Vec2f& s1, const Vec2f& s2, const Vec2f
   return ClosestPointOnSegment(s1, s2, p, unlerp);
 }
 
+static Vec2f getPerpendicular(Vec2f vector) {
+	return Vec2f( -vector.y, vector.x );
+}
+
 static Vec2f ClosestPointOnArc(const Vec2f& center, const Vec2f& start, const Vec2f& end, const float& radius, const float& angleStart, const float& angle, const Vec2f& p)
 {
   Vec2f diff = p - center;
 
   bool over180 = angle > 180;
 
-  Vec2f startPerpendicular = start.getPerpendicular();
-  Vec2f endPerpendicular = -end.getPerpendicular();
+  Vec2f startPerpendicular = getPerpendicular(start);
+  Vec2f endPerpendicular = -getPerpendicular(end);
   float startPrependicularDot = startPerpendicular.dot(diff);
   float endPrependicularDot = endPerpendicular.dot(diff);
 
